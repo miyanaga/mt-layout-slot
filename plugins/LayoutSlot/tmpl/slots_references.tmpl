@@ -1,0 +1,24 @@
+<mt:if name="error">
+    <mtapp:statusmsg
+      id="layout-slot-refs-error"
+      class="error">
+        <mt:var name="error">
+    </mtapp:statusmsg>
+</mt:if>
+<mt:if name="slot_refs">
+    <ul>
+    <mt:loop name="slot_refs">
+        <li class="icon-left icon-related"><a href="<mt:var name='uri' escape='html'>"><mt:var name="name" escape="html"></a></li>
+        <mt:if name="slots">
+            <ul class="icon-left">
+            <mt:loop name="slots">
+                <li class="icon-left icon-mini-templates"><mt:var name="name" escape="html"></li>
+                <mt:if name="description">
+                    <li class="icon-left"><mt:var name="description" escape="html"></li>
+                </mt:if>
+            </mt:loop>
+            </ul>
+        </mt:if>
+    </mt:loop>
+    </ul>
+</mt:if>

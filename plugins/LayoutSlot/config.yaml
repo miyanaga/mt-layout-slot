@@ -1,0 +1,21 @@
+name: "LayoutSlot"
+version: 0.1
+description: '<__trans phrase="Enables layout and slot templating.">'
+author_name: "ideaman's Inc."
+author_link: http://www.ideamans.com/
+l10n_class: MT::Template::LayoutSlot::L10N
+id: LayoutSlot
+
+applications:
+  cms:
+    callbacks:
+      template_param.edit_template: MT::Template::LayoutSlot::CMS::on_template_param_edit_template
+    methods:
+      slot_refs: MT::Template::LayoutSlot::CMS::slot_refs
+
+tags:
+  block:
+    Layout: MT::Template::LayoutSlot::Tags::_hdlr_Layout
+    Slot: MT::Template::LayoutSlot::Tags::_hdlr_Slot
+    SlotHeader: MT::Template::LayoutSlot::Tags::_hdlr_SlotHeader
+    SlotFooter: MT::Template::LayoutSlot::Tags::_hdlr_SlotFooter
