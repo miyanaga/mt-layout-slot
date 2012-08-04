@@ -1,3 +1,4 @@
+<__trans_section component="layoutslot">
 <mt:if name="error">
     <mtapp:statusmsg
       id="layout-slot-refs-error"
@@ -5,20 +6,38 @@
         <mt:var name="error">
     </mtapp:statusmsg>
 </mt:if>
-<mt:if name="slot_refs">
-    <ul>
-    <mt:loop name="slot_refs">
-        <li class="icon-left icon-related"><a href="<mt:var name='uri' escape='html'>"><mt:var name="name" escape="html"></a></li>
-        <mt:if name="slots">
-            <ul class="icon-left">
-            <mt:loop name="slots">
-                <li class="icon-left icon-mini-templates"><mt:var name="name" escape="html"></li>
-                <mt:if name="description">
-                    <li class="icon-left"><mt:var name="description" escape="html"></li>
+
+<mt:loop name="slot_refs">
+    <mt:if name="slots">
+        <mt:loop name="slots">
+        <ul class="slot-ref">
+            <li>
+                <a href="javascript:void(0)" class="slot-ref-name icon-left icon-minus"><mt:var name="name" escape="html"></a>
+                @
+                <mt:if name="uri">
+                    <a class="" href="<mt:var name='uri' escape='html'>">
                 </mt:if>
-            </mt:loop>
-            </ul>
-        </mt:if>
-    </mt:loop>
-    </ul>
-</mt:if>
+                <span class="slot-ref-tmpl-name"><mt:var name="tmpl_name" escape="html"></span>
+                <mt:if name="uri">
+                    </a>
+                </mt:if>
+            </li>
+            <mt:if name="description">
+                <li class="icon-left">
+                    <mt:var name="description" escape="html">
+                </li>
+            </mt:if>
+            <li class="slot-ref-source icon-left" style="display:none"><textarea readonly="readonly">&lt;mt:Slot name="<mt:var name="name" escape="html">"&gt;
+<mt:var name="source" escape="html">
+&lt;/mt:Slot&gt;
+</textarea></li>
+        </ul>
+        </mt:loop>
+    <mt:else>
+        <ul class="slot-ref">
+            <li class="icon-left icon-remove"><__trans phrase="[_1] has no slot(s)" params=<mt:var name="name" escape="html">"></li>
+        </ul>
+    </mt:if>
+</mt:loop>
+
+</__trans_section>

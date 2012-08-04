@@ -28,16 +28,30 @@ sub on_template_param_edit_template {
         label   => $plugin->translate('Slots Reference'),
     });
     $el->innerHTML(<<'MTML');
+<style type="text/css">
+    .slot-ref-source { margin-right: 16px; }
+    .slot-ref textarea { height: 200px; padding: 4px; width: 100%; font-size: 90%; }
+</style>
 <div id="layoutslot-references-inner"></div>
 <script type="text/javascript">
 <!--
     jQuery(function($) {
-        console.log('<mt:var name="layoutslot_refs_ajax_uri" escape="js">');
         $.get(
             '<mt:var name="layoutslot_refs_ajax_uri" escape="js">',
             function(data) {
-                console.log(data);
-                $('#layoutslot-references-inner').append($(data));
+                var $refs = $(data);
+                var switcher = function(e) {
+                    $(this).toggleClass('icon-minus').toggleClass('icon-plus');
+                    var $source = $(this).parents('.slot-ref').first().find('.slot-ref-source');
+                    if ( $(this).hasClass('icon-plus') ) {
+                        $source.show();
+                    } else {
+                        $source.hide();
+                    }
+                };
+                $refs.find('.slot-ref-name').toggle(switcher, switcher);
+
+                $('#layoutslot-references-inner').append($refs);
                 $('#layoutslot-references').removeClass('hidden');
             }
         );
@@ -74,6 +88,7 @@ sub slot_refs {
             my @refs = map {
                 my @slots;
                 my $uri;
+                my $tmpl_name = $_->{name} || '';
                 @slots = map {
                     $uri = $app->uri( mode => 'view', args => {
                         _type   => 'template',
@@ -84,7 +99,9 @@ sub slot_refs {
                     {
                         name        => $_->{name},
                         description => $_->{description},
+                        tmpl_name   => $tmpl_name,
                         uri         => $uri || '',
+                        source      => $_->{source} || '',
                     }
                 } sort {
                     ($a->{__order__} || 0) <=> ($b->{__order__} || 0)
@@ -93,9 +110,8 @@ sub slot_refs {
                 } values %{$_->{slots}} if $_->{slots};
 
                 {
-                    name    => $_->{name},
+                    name    => $tmpl_name,
                     slots   => \@slots,
-                    uri     => $uri || '',
                 }
             } sort {
                 ($a->{__order__} || 0) <=> ($b->{__order__} || 0)

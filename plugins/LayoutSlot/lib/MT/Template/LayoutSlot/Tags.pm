@@ -12,13 +12,15 @@ sub _hdlr_Layout {
     my ( $ctx, $args, $cond ) = @_;
     my $plugin = MT->component('layoutslot') || die 'LayoutSlot plugin not found';
 
+    my $builder = $ctx->stash('builder');
+    my $tokens = $ctx->stash('tokens');
+
     # Reference mode?
     if ( defined( my $refs = $ctx->stash('_slots_refs') ) ) {
 
         # Template name
         my $name = ( grep { $_ } map { $args->{$_} } qw/file module widget identifier/ )[0];
         $name ||= $plugin->translate('[Unknown Template]');
-        $name = $name . '(' . $args->{blog_id} . ')' if $args->{blog_id};
 
         # Gather slots
         local $ctx->{__stash}{_slots_ref} = { __order__ => 0 };
@@ -38,8 +40,6 @@ sub _hdlr_Layout {
     }
 
     # Building mode
-    my $builder = $ctx->stash('builder');
-    my $tokens = $ctx->stash('tokens');
 
     # Layout stacking
     $ctx->{__stash}{_layout_stack} ||= 0;
@@ -65,6 +65,9 @@ sub _hdlr_Slot {
     my $name = $args->{name}
         || return $ctx->error($ctx->translate('[_1] tag requires [_2] modifier', 'mt:Slot', 'name'));
 
+    my $builder = $ctx->stash('builder');
+    my $tokens = $ctx->stash('tokens');
+
     # Reference mode?
     if ( defined( my $ref = $ctx->{__stash}{_slots_ref} ) ) {
 
@@ -80,10 +83,6 @@ sub _hdlr_Slot {
         }
         return '';
     }
-
-    # Building mode
-    my $builder = $ctx->stash('builder');
-    my $tokens = $ctx->stash('tokens');
 
     # Arguments
     my $trim = $args->{trim};
@@ -106,45 +105,44 @@ sub _hdlr_Slot {
 
     }
 
+    # Output: join header and footer if has body
+    $body = join('', $header || '', $body, $footer || '') if $body;
+
     # In layout context?
-    if ( defined $slots ) {
-        if ( defined( my $slot = $slots->{$name} ) ) {
+    if ( defined( $slots ) && defined( my $slot = $slots->{$name} ) ) {
 
-            # Join body
-            $slot->{body} ||= '';
-            if ( $slot->{body} ) {
-                if ( defined $slot->{append} ) {
-                    $body = $body . $slot->{append} . $slot->{body}; # orig,append,override
-                } elsif ( defined $slot->{prepend} ) {
-                    $body = $slot->{body} . $slot->{prepend} . $body; # override,prepend,orig
-                } elsif ( defined $append ) {
-                    $body = $slot->{body} . $append . $body; # override,append,orig
-                } elsif ( defined $prepend ) {
-                    $body = $body . $prepend . $slot->{body}; # orig,prepend,override
-                } else {
-                    $body = $slot->{body}; # Replace
-                }
+        # Join body
+        $slot->{body} ||= '';
+        if ( $slot->{body} ) {
+            if ( defined $slot->{append} ) {
+                $body = $body . $slot->{append} . $slot->{body}; # orig,append,override
+            } elsif ( defined $slot->{prepend} ) {
+                $body = $slot->{body} . $slot->{prepend} . $body; # override,prepend,orig
+            } elsif ( defined $append ) {
+                $body = $slot->{body} . $append . $body; # override,append,orig
+            } elsif ( defined $prepend ) {
+                $body = $body . $prepend . $slot->{body}; # orig,prepend,override
+            } else {
+                $body = $slot->{body}; # Replace
             }
-
-            # Override header and footer
-            $header = $slot->{header} if defined $slot->{header};
-            $footer = $slot->{footer} if defined $slot->{footer};
-        } else {
-
-            # Store results.
-            $slots->{$name} = {
-                header  => $header,
-                footer  => $footer,
-                body    => $body,
-                prepend => $prepend,
-                append  => $append,
-            };
-            return '';
         }
+
+        # Override header and footer
+        $header = $slot->{header} if defined $slot->{header};
+        $footer = $slot->{footer} if defined $slot->{footer};
+    } else {
+
+        # Store results.
+        $slots->{$name} = {
+            header  => $header,
+            footer  => $footer,
+            body    => $body,
+            prepend => $prepend,
+            append  => $append,
+        };
     }
 
-    # Output: join header and footer if has body
-    return $body? join('', $header || '', $body, $footer || ''): $body || '';
+    $body;
 }
 
 sub _hdlr_SlotPartial {

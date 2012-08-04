@@ -13,6 +13,7 @@ use vars qw( %Lexicon );
     'Tempalte:[_1] is not found' => 'テンプレート:[_1]が見つかりません',
     '[Unknown Template]' => '[不明なテンプレート]',
     '[_1] tag requires [_2] modifier' => '[_1]タグには[_2]モディファイアが必要です',
+    '[_1] has no slot(s)' => '[_1]にスロットはありません',
 );
 
 1;
