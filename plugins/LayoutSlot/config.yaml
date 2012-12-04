@@ -1,5 +1,5 @@
 name: "LayoutSlot"
-version: 0.5
+version: 0.6
 description: '<__trans phrase="Enables layout and slot templating.">'
 author_name: "ideaman's Inc."
 author_link: http://www.ideamans.com/
@@ -9,13 +9,14 @@ id: LayoutSlot
 applications:
   cms:
     callbacks:
-      template_param.edit_template: MT::Template::LayoutSlot::CMS::on_template_param_edit_template
+      template_param.edit_template: $LayoutSlot::MT::Template::LayoutSlot::CMS::on_template_param_edit_template
     methods:
-      slot_refs: MT::Template::LayoutSlot::CMS::slot_refs
+      slot_refs: $LayoutSlot::MT::Template::LayoutSlot::CMS::slot_refs
 
 tags:
   block:
-    Layout: MT::Template::LayoutSlot::Tags::_hdlr_Layout
-    Slot: MT::Template::LayoutSlot::Tags::_hdlr_Slot
-    SlotHeader: MT::Template::LayoutSlot::Tags::_hdlr_SlotHeader
-    SlotFooter: MT::Template::LayoutSlot::Tags::_hdlr_SlotFooter
+    Layout: $LayoutSlot::MT::Template::LayoutSlot::Tags::_hdlr_Layout
+    Slot: $LayoutSlot::MT::Template::LayoutSlot::Tags::_hdlr_Slot
+    IfSlotted?: $LayoutSlot::MT::Template::LayoutSlot::Tags::_hdlr_IfSlotted
+    SlotHeader: $LayoutSlot::MT::Template::LayoutSlot::Tags::_hdlr_SlotHeader
+    SlotFooter: $LayoutSlot::MT::Template::LayoutSlot::Tags::_hdlr_SlotFooter

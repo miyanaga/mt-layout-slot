@@ -46,8 +46,6 @@ If you use mt:Slot in mt:Layout, original mt:Slot tags in layout module will be 
 
 To use content of original slot, skip to write mt:Slot tag in mt:Layout.
 
-You can use append or prepend modifier to retain the original content as sufix or prefix.
-
 # Tags
 
 ## &lt;mt:Slot&gt;&lt;/mt:Slot&gt;
@@ -56,23 +54,7 @@ Defines of replace partial. If used in mt:Layout, the original slot is replaced.
 
 ### name
 
-Required to name the slot.
-
-### append
-
-In definition, the original content is appended to replaced content.
-
-In mt:Layout, the new content is appended to original content.
-
-Set a string to glue them.
-
-### prepend
-
-In definition, the original content is prepended to replaced content.
-
-In mt:Layout, the new content is prepended to original content.
-
-Set a string to glue them.
+Required to name of the slot.
 
 ### trim
 
@@ -85,6 +67,14 @@ Default is 1(true). Set 0 or empty not to trim.
 Use a module or file as layout.
 
 Modifiers are compatible with mt:Include tag.
+
+## &lt;mt:IfSlotted&gt;
+
+Check if a value already filled.
+
+### name
+
+Required to name of the slot.
 
 ## &lt;mt:SlotHeader&gt;&lt;/mt:SlotHeader&gt; and &lt;mt:SlotFooter&gt;&lt;/mt:SlotFooter&gt;
 

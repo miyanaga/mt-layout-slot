@@ -85,41 +85,21 @@ sub slot_refs {
         if ( defined ( my $res = $builder->build($ctx, $tokens) ) ) {
 
             # Make array
-            my @refs = map {
-                my @slots;
-                my $uri;
-                my $tmpl_name = $_->{name} || '';
-                @slots = map {
-                    $uri = $app->uri( mode => 'view', args => {
-                        _type   => 'template',
-                        id      => $_->{template_id},
-                        blog_id => $_->{blog_id},
-                    }) if $_->{template_id};
+            my @slots = map {
+                $_->{uri} = $app->uri( mode => 'view', args => {
+                    _type   => 'template',
+                    id      => $_->{template_id},
+                    blog_id => $_->{blog_id} || 0,
+                }) if $_->{template_id};
 
-                    {
-                        name        => $_->{name},
-                        description => $_->{description},
-                        tmpl_name   => $tmpl_name,
-                        uri         => $uri || '',
-                        source      => $_->{source} || '',
-                    }
-                } sort {
-                    ($a->{__order__} || 0) <=> ($b->{__order__} || 0)
-                } grep {
-                    ref $_ eq 'HASH'
-                } values %{$_->{slots}} if $_->{slots};
-
-                {
-                    name    => $tmpl_name,
-                    slots   => \@slots,
-                }
+                $_;
             } sort {
-                ($a->{__order__} || 0) <=> ($b->{__order__} || 0)
+                ($a->{order} || 0) <=> ($b->{order} || 0)
             } grep {
                 ref $_ eq 'HASH'
             } values %$refs;
 
-            $fragment->param('slot_refs', \@refs);
+            $fragment->param('slots', \@slots);
         } else {
 
             # Build error

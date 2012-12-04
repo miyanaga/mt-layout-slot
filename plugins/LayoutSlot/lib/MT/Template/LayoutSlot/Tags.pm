@@ -15,7 +15,7 @@ sub _hdlr_Layout {
     my $builder = $ctx->stash('builder');
     my $tokens = $ctx->stash('tokens');
 
-    # Reference mode?
+    # Reference mode
     if ( defined( my $refs = $ctx->stash('_slots_refs') ) ) {
 
         # Template name
@@ -23,41 +23,43 @@ sub _hdlr_Layout {
         $name ||= $plugin->translate('[Unknown Template]');
 
         # Gather slots
-        local $ctx->{__stash}{_slots_ref} = { __order__ => 0 };
-        my $result = $ctx->invoke_handler('include', $args, $cond);
+        local $ctx->{__stash}{_slots_refs_order}
+            = $ctx->{__stash}{_slots_refs_order} || 0;
+        if ( my $template = $ctx->stash('template') ) {
+            $template->name($name) unless $template->name;
+        }
+
+        my $result = $ctx->invoke_handler('includeblock', $args, $cond);
         return $result unless defined $result;
 
-        # Stash slots as for layout
-        $ctx->stash('_slots_refs', $refs = {} ) if ref $refs ne 'HASH';
-        $refs->{$name} = {
-            name => $name,
-            slots => $ctx->{__stash}{_slots_ref},
-        };
-        $refs->{__order__} ||= 0;
-        $refs->{$name}{__order__} = $refs->{__order__}++;
+        defined( $builder->build($ctx, $tokens, $cond) )
+            or return $ctx->error($builder->errstr);
 
         return '';
     }
 
     # Building mode
 
-    # Layout stacking
-    $ctx->{__stash}{_layout_stack} ||= 0;
-    my $stack = ++$ctx->{__stash}{_layout_stack};
-    $ctx->{__stash}{_slots} = {} if $stack == 1;
+    # Inherit or initialize slots
+    local $ctx->{__stash}{_slots} = $ctx->{__stash}{_inside_slot}
+        ? {}
+        : $ctx->{__stash}{_slots} || {};
 
-    # Build to override slots
+    # Gather slots
     defined( $builder->build($ctx, $tokens, $cond) )
-        || return $ctx->error($builder->errstr);
+        or return $ctx->error($builder->errstr);
 
-    # Build original layout
-    my $res = $ctx->invoke_handler('include', $args, $cond);
+    # Delegate to mt:include
+    $ctx->invoke_handler('includeblock', $args, $cond);
+}
 
-    # Reset if stack over
-    $ctx->{__stash}{_lsyout_stack} = --$stack;
-    $ctx->{__stash}{_slots} = undef unless $stack;
+sub _hdlr_IfSlotted {
+    my ( $ctx, $args, $cond ) = @_;
+    my $name = $args->{name}
+        || return $ctx->error($ctx->translate('[_1] tag requires [_2] modifier', 'mt:IfSlotted', 'name'));
 
-    return $res;
+    my $slots = $ctx->{__stash}{_slots};
+    $slots && $slots->{$name} ? 1 : 0;
 }
 
 sub _hdlr_Slot {
@@ -69,78 +71,54 @@ sub _hdlr_Slot {
     my $tokens = $ctx->stash('tokens');
 
     # Reference mode?
-    if ( defined( my $ref = $ctx->{__stash}{_slots_ref} ) ) {
+    if ( defined( my $refs = $ctx->{__stash}{_slots_refs} ) ) {
 
         # Stash reference
-        $ref->{$name} = {
-            name => $name,
+        $refs->{$name} = {
+            name        => $name,
+            order       => $ctx->{__stash}{_slots_refs_order}++,
+            source      => $ctx->{__stash}{uncompiled},
             description => $args->{description} || $args->{desc} || '',
-            __order__ => $ref->{__order__}++,
         };
+
         if ( my $template = $ctx->stash('template') ) {
-            $ref->{$name}{template_id} = $template->id;
-            $ref->{$name}{blog_id} = $template->blog_id;
+            $refs->{$name}{template} = $template->name;
+            $refs->{$name}{template_id} = $template->id;
+            $refs->{$name}{blog_id} = $template->blog_id;
         }
+
+        # Gether inside
+        defined( $builder->build($ctx, $tokens, $cond) )
+            || return $ctx->error($builder->errstr);
+
         return '';
     }
+
+    # Building mode
+    my $slots = $ctx->{__stash}{_slots};
 
     # Arguments
     my $trim = $args->{trim};
     $trim = 1 unless defined $trim;
-    my $prepend = $args->{prepend};
-    my $append = $args->{append};
-    my ( $body, $header, $footer );
 
-    my $slots = $ctx->{__stash}{_slots};
-    {
+    # Build inside
+    local $ctx->{__stash}{_inside_slot} = 1;
+    local $ctx->{__stash}{_slot} = {};
+    defined( my $body = $builder->build($ctx, $tokens, $cond) )
+        || return $ctx->error($builder->errstr);
 
-        # Build original
-        local $ctx->{__stash}{_slot} = {};
-        defined( $body = $builder->build($ctx, $tokens, $cond) )
-            || return $ctx->error($builder->errstr);
-
-        $body =~ s/(^\s+|\s+$)//g if $trim;
-        $header = $ctx->{__stash}{_slot}{header};
-        $footer = $ctx->{__stash}{_slot}{footer};
-
-    }
+    $body =~ s/(^\s+|\s+$)//g if $trim;
+    $body = $slots->{$name} if $slots && defined $slots->{$name};
 
     # Output: join header and footer if has body
-    $body = join('', $header || '', $body, $footer || '') if $body;
+    $body = join('',
+        $ctx->{__stash}{_slot}{header} || '',
+        $body,
+        $ctx->{__stash}{_slot}{footer} || ''
+    ) if $body;
 
-    # In layout context?
-    if ( defined( $slots ) && defined( my $slot = $slots->{$name} ) ) {
-
-        # Join body
-        $slot->{body} ||= '';
-        if ( $slot->{body} ) {
-            if ( defined $slot->{append} ) {
-                $body = $body . $slot->{append} . $slot->{body}; # orig,append,override
-            } elsif ( defined $slot->{prepend} ) {
-                $body = $slot->{body} . $slot->{prepend} . $body; # override,prepend,orig
-            } elsif ( defined $append ) {
-                $body = $slot->{body} . $append . $body; # override,append,orig
-            } elsif ( defined $prepend ) {
-                $body = $body . $prepend . $slot->{body}; # orig,prepend,override
-            } else {
-                $body = $slot->{body}; # Replace
-            }
-        }
-
-        # Override header and footer
-        $header = $slot->{header} if defined $slot->{header};
-        $footer = $slot->{footer} if defined $slot->{footer};
-    } else {
-
-        # Store results.
-        $slots->{$name} = {
-            header  => $header,
-            footer  => $footer,
-            body    => $body,
-            prepend => $prepend,
-            append  => $append,
-        };
-    }
+    return $body unless $slots;
+    $slots->{$name} = $body;
 
     $body;
 }
